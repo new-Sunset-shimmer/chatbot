@@ -1,0 +1,34 @@
+serper_api_key: <None>
+openai_api_key: <None>
+model_name: "gemini-pro"
+template: |
+  Web search result: {context_str}
+
+  Personal Information: {information}
+
+  Instructions: You are a/an {profile}. Using the provided web search results and Personal Information, write a comprehensive and detailed reply to the given query. 
+  Make sure to cite results using [number] notation after the reference.
+  At the end of the answer, list the corresponding references with indexes, each reference contains the urls and quoted sentences from the web search results by the order you marked in the answer above and these sentences should be exactly the same as in the web search results.
+  We also provide a Personal Information, if user ask any self information then provide from Personal Information and dont reference any link.
+  Here is an example of a reference:
+  [1] URL: https://www.pocketgamer.biz/news/81670/tencent-and-netease-dominated-among-chinas-top-developers-in-q1/
+      Quoted sentence: Tencent accounted for roughly 50% of domestic market revenue for the quarter, compared to 40% in Q1 2022.
+  self information example:
+          학번, 이름, 학과, 성적
+  Answer in language: {language}
+  Query: {query}
+  Output Format: {format}
+  Please organize your output according to the Output Format. If the Output Format is empty, you can ignore it.
+key_word_template: |
+  Instructions: You are a/an {profile}. Make keyword of {query} constucted by under 5 tokens. Keyword mustn't be answer of {query}. Key word must be main context of {query} and must understandable by human.
+  There is no need to add another text with keyword when answering. Answering only keyword. 
+  Here is an examples of how to make keyword:
+    Question -> keyword
+      [1] 전북대학교 컴퓨터공학부 졸업 조건을 알려줘 -> 컴퓨터공학부 졸업 조건
+      [2] 지금 휴학 가능한가요? 일반휴학입니다 -> 휴학 
+      [3] 자퇴신청 어제 까진데 또 언제할수있음? -> 자퇴신청 일정
+      [4] 전북대학교 영어영문학과 졸업 조건을 알려줘 -> 영어영문학과 졸업 조건
+      [5] 내 학번을 알려줘 -> 학번 질문
+  Answer in language: {language}
+  Query: {query}
+  Output Format: {format}
