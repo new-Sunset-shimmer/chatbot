@@ -10,9 +10,11 @@
     - [ ]  OUTPUT
 - [ ]  [BONUS]
 
+Disclaimer!!!!!!: all of my code based on https://github.com/Wilson-ZheLin/GPT-4-Web-Browsing
+
 # 크롤링
 
-![Crawler.png](%E1%84%80%E1%85%AE%E1%84%92%E1%85%A7%E1%86%AB%20%E1%84%89%E1%85%A5%E1%86%AF%E1%84%86%E1%85%A7%E1%86%BC%2018cbfd759a094c27a2ed85c806821a67/Crawler.png)
+![crawler_new (1).png](%E1%84%80%E1%85%AE%E1%84%92%E1%85%A7%E1%86%AB%20%E1%84%89%E1%85%A5%E1%86%AF%E1%84%86%E1%85%A7%E1%86%BC%2018cbfd759a094c27a2ed85c806821a67/crawler_new_(1).png)
 
 ### CRAWLER
 
@@ -28,7 +30,7 @@ Chroma는 오픈 소스 임베딩 데이터베이스입니다. Chroma를 사용�
 
 ![hrm4.svg](%E1%84%80%E1%85%AE%E1%84%92%E1%85%A7%E1%86%AB%20%E1%84%89%E1%85%A5%E1%86%AF%E1%84%86%E1%85%A7%E1%86%BC%2018cbfd759a094c27a2ed85c806821a67/hrm4.svg)
 
-문서들을 Vector로 Embedding 하여 저장하고 Retrieve할 때도 Query를 Embedding하여 vector기반으로 관련이 높은 문서들을 찾는다. Embedding을 즉 Vector을 만들때 인공지능 모델을 쓰는 경우가 있으며 https://github.com/ssisOneTeam/Korean-Embedding-Model-Performance-Benchmark-for-Retriever의 성능 지표를 따라 가장 성능이 높은 jhgan/ko-sroberta-multitask을 쓰고 있다.
+문서들을 Vector로 Embedding 하여 저장하고 Retrieve할 때도 Query를 Embedding하여 vector기반으로 관련이 높은 문서들을 찾는다. Embedding을 즉 Vector을 만들때 인공지능 모델을 쓰는 경우가 있으며 https://github.com/ssisOneTeam/Korean-Embedding-Model-Performance-Benchmark-for-Retriever 의 성능 지표를 따라 가장 성능이 높은 jhgan/ko-sroberta-multitask을 쓰고 있다.
 
 ## LLM Chat
 
@@ -79,6 +81,8 @@ key_word_template: |
   Query: {query}
   Output Format: {format}
 ```
+
+### Llama3
 
 ```yaml
 template: |
@@ -142,7 +146,7 @@ key_word_template: |
 
 ### OUTPUT EXAMPLE
 
-GEMINI’s EXAMPLE OUTPUT
+### GEMINI’s EXAMPLE OUTPUT
 
 ```
 Q:전북대학교 컴퓨터공학부 졸업 조건을 알려줘
@@ -210,7 +214,7 @@ Q:전북대학교 컴퓨터공학부 졸업 조건을 알려줘
 A:전북대학교 컴퓨터공학부 졸업 조건은 다음과 같아요. 먼저, 전북대 컴퓨터공학부에서는 졸업 조건을 만족하기 위해 학생들은 종합설계 작품을 개발해야 해요. 이 작품은 학생들이 학습한 지식과 기술을 실제 문제 해결에 적용하는 것을 목표로 하며, 이를 통해 학생들은 실제 세계의 문제를 해결할 수 있는 능력을 키울 수 있어요.
 또한, 졸업 조건을 만족하기 위해서는 학생들은 졸업자격 인증제 이수기준을 만족해야 해요. 이 기준은 학생들이 전북대에서 취득한 학점을 기반으로 하며, 이를 통해 학생들이 전북대에서 충분한 학업을 이수했는지를 판단해요.
 전북대 컴퓨터공학부 졸업 조건은 이러한 두 가지 요소를 포함하며, 학생들이 실제 세계의 문제를 해결할 수 있는 능력을 키울 수 있도록 도와줘요. 더 궁금한 점이 있으면 언제든지 물어봐 주세요!
-References: [1] [https://sites.google.com/view/jbnu-dblab/people](https://sites.google.com/view/jbnu-dblab/people) [2] [https://it.jbnu.ac.kr/it/14016/subview.do](https://it.jbnu.ac.kr/it/14016/subview.do) [3] [https://cse.jbnu.ac.kr/cse/3577/subview.do](https://cse.jbnu.ac.kr/cse/3577/subview.do) [4] [https://csai.jbnu.ac.kr/cse/3577/subview.do](https://csai.jbnu.ac.kr/cse/3577/subview.do) [5] [https://csai.jbnu.ac.kr/csai/29037/subview.do](https://csai.jbnu.ac.kr/csai/29037/subview.do)
+References: [1] [https://sites.google.com/view/jbnu-dblab/people](https://sites.google.com/view/jbnu-dblab/people) [2] [https://it.jbnu.ac.kr/it/14016/subview.do](https://it.jbnu.ac.kr/it/14016/subview.do) [3] [https://cse.jbnu.ac.kr/cse/3577/subview.do](https://cse.jbnu.ac.kr/cse/3577/subview.do) [4] [https://csai.jbnu.ac.kr/cse/3577/subview.do](https://csai.jbnu.ac.kr/cse/3577/subview.do) [5] [https://csai.jbnu.ac.kr/csai/29037/subview.do](https://csai.jbnu.ac.kr/csai/29037/subview.do)
 ```
 
 ```
