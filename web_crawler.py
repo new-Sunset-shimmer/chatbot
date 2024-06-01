@@ -31,7 +31,7 @@ class WebScraper:
     def get_webpage_html(self, url):
         # Fetch the HTML content of a webpage from a given URL
         response = requests.Response()  # Create an empty Response object
-        if url.endswith(".pdf"):
+        if url.endswith(".pdf") or re.search("download", url) or re.search("filedownload", url):
             # Skip PDF files which are time consuming
             return response
 
@@ -53,7 +53,7 @@ class WebScraper:
     def extract_main_content(self, html_soup, rule=0):
         # Extract the main content from a BeautifulSoup object
         main_content = []
-        tag_rule = re.compile("^(h[1-6]|p|div|span)" if rule == 1 else "^(h[1-6]|p|span)")
+        tag_rule = re.compile("^(h[1-6]|p|div|span)" if rule == 1 else "^(h[1-6]|p|div|span)")
         # Iterate through specified tags and collect their text
         for tag in html_soup.find_all(tag_rule):
             tag_text = tag.get_text().strip()

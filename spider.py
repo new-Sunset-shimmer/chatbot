@@ -78,13 +78,14 @@ class WebScraper:
     def extract_main_content(self, html_soup, rule=0):
         # Extract the main content from a BeautifulSoup object
         main_content = []
-        # tag_rule = re.compile("^(h[1-6]|p|div|span|th|caption)" if rule == 1 else "^(h[1-6]|p)")
-        # # Iterate through specified tags and collect their text
-        # for tag in html_soup.find_all(tag_rule):
-        #     tag_text = tag.get_text().strip()
-        #     if tag_text and len(tag_text.split()) > 2:
-                # main_content.append(tag_text)
-        main_content = html_soup.get_text()
+        tag_rule = re.compile("[h[1-6]|span|th|caption]")
+        language_rule = re.compile("[가-힣a-zA-Z]+")
+        # Iterate through specified tags and collect their text
+        for tag in html_soup.find_all(tag_rule):
+            tag_text = tag.get_text().strip()
+            if tag_text and len(tag_text.split()) > 5:
+                tag_text = ' '.join(language_rule.findall(tag_text)) + '\n'
+                main_content.append(tag_text)
         return "\n".join(main_content).strip()
     def scrape_page(self, start_url, rule=0, max_pages=None):
         visited = set()
@@ -103,18 +104,20 @@ class WebScraper:
                 if depth > depth_check:
                     self.retriever.htmls.to_csv('htmls.csv', index=False)
                     depth_check = depth
+                    print(depth_check)
                 webpage_html = self.get_webpage_html(current_url)
                 soup = self.convert_html_to_soup(webpage_html)
                 main_content = self.extract_main_content(soup, rule)
                 # Extract main content or process the page as needed
                 titles = soup.find('meta', property='og:title')['content']
-                self.retriever.retrieve_embeddings(titles + main_content, current_url)
+                self.retriever.retrieve_embeddings(main_content, current_url, titles)
                 # Add links to the queue
                 follow_links = soup.find_all('a', href=True)
                 for link in follow_links:
                     follow_url = link['href']
                     if (follow_url.startswith('#') or self.is_same_domain(follow_url, self.exclude_domains) 
-                        or re.search("download.do", follow_url)):  # Skip anchor links
+                        or re.search("download.do", follow_url) or re.search("filedownload", follow_url)
+                         or re.search(".png", follow_url)  or re.search(".jpg", follow_url)):  # Skip anchor links
                         continue
                     if not follow_url.startswith(('http://', 'https://')):  # Handle relative links
                         follow_url = urllib.parse.urljoin(current_url, follow_url)
@@ -153,20 +156,19 @@ class EmbeddingRetriever:
         self.htmls = pd.read_csv('htmls.csv')
         self.htmls_temp = {"url":[],"content":[]}
 
-    def retrieve_embeddings(self, content: str, link: str):
+    def retrieve_embeddings(self, content: str, link: str, titles: str):
         # Retrieve embeddings for a given list of contents and a query
-        metadatas = [{'url': link}]
+        metadatas = [{'url': link,'title':titles}]
         text = self.text_splitter.create_documents([content], metadatas)
         # Create a Chroma database from the documents using specific embeddings
         self.Chromadb.add_documents(
             text,
-            # SentenceTransformerEmbeddings(model_name="sentence-transformers/paraphrase-multilingual-mpnet-base-v2",model_kwargs = {'device': 'cuda'}),
-            
-            # SentenceTransformerEmbeddings(model_name="BM-K/KoSimCSE-roberta-multitask",model_kwargs = {'device': 'cuda'}),
         )
         # self.htmls_temp["url"].append(link)
         # self.htmls_temp["content"].append(content)
-        self.htmls.append({"url":[link],"content":[content]}, ignore_index=False)
+        
+        self.htmls = pd.concat([self.htmls,pd.DataFrame(data=[[link,content,titles]], columns=['url','content','title'])],ignore_index=True)
+
         # self.FAISSdb.add_documents(
         #     text,
         #     # SentenceTransformerEmbeddings(model_name="sentence-transformers/paraphrase-multilingual-mpnet-base-v2",model_kwargs = {'device': 'cuda'}),
@@ -178,6 +180,6 @@ class EmbeddingRetriever:
 # Example usage
 if __name__ == "__main__":
     scraper = WebScraper(user_agent='macOS')
-    test_url = ["http://www.jbnu.ac.kr/kor/?menuID=139","https://csai.jbnu.ac.kr/csai/29107/subview.do","https://cse.jbnu.ac.kr/cse/index.do"]
+    test_url = ["https://www.jbnu.ac.kr/kor/?menuID=139","https://csai.jbnu.ac.kr/csai/29107/subview.do","https://cse.jbnu.ac.kr/cse/index.do"]
     for url in test_url:
-        scraper.scrape_page(url, max_pages=5)  # Specify the max
+        scraper.scrape_page(url, max_pages=10)  # Specify the max

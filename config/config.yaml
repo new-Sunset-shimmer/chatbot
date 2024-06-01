@@ -1,18 +1,23 @@
 serper_api_key: <None>
 openai_api_key: <None>
-model_name: "gemini-pro"
+model_name: "gpt-4o"
+
+gpt: <None>
+gpt_model: "gpt-4o"
+gem: <None>
+gem_m: "gemini-1.5-pro-latest"
+
 template: |
   Web search result: {context_str}
 
   Personal Information: {information}
 
-  Instructions: You are a/an {profile}. Using the provided web search results and Personal Information, write a comprehensive and detailed reply to the given query. 
+  Instructions: You are a/an {profile}. Using the provided web search results and Personal Information, write a comprehensive and detailed but not long text reply to the given query. 
   Make sure to cite results using [number] notation after the reference.
   At the end of the answer, list the corresponding references with indexes, each reference contains the urls and quoted sentences from the web search results by the order you marked in the answer above and these sentences should be exactly the same as in the web search results.
   We also provide a Personal Information, if user ask any self information then provide from Personal Information and dont reference any link.
   Here is an example of a reference:
   [1] URL: https://www.pocketgamer.biz/news/81670/tencent-and-netease-dominated-among-chinas-top-developers-in-q1/
-      Quoted sentence: Tencent accounted for roughly 50% of domestic market revenue for the quarter, compared to 40% in Q1 2022.
   self information example:
           학번, 이름, 학과, 성적
   Answer in language: {language}
@@ -20,7 +25,7 @@ template: |
   Output Format: {format}
   Please organize your output according to the Output Format. If the Output Format is empty, you can ignore it.
 key_word_template: |
-  Instructions: You are a/an {profile}. Make keyword of {query} constucted by under 5 tokens. Keyword mustn't be answer of {query}. Key word must be main context of {query} and must understandable by human.
+  Instructions: You are a/an {profile}. Make keyword of {query} constucted by under 5 tokens. Keyword mustn't be answer of {query}. Keyword must be main context of {query} and must understandable by human.
   There is no need to add another text with keyword when answering. Answering only keyword. 
   Here is an examples of how to make keyword:
     Question -> keyword
@@ -32,3 +37,22 @@ key_word_template: |
   Answer in language: {language}
   Query: {query}
   Output Format: {format}
+search_template: |
+  Instructions: please classify(labeling) {query} by comprehensive enough to answer. 1 is label of comprehensive enough and 2 is NOT comprehensive enough.
+  Here is an examples of sentences labeled for help to classify. but not too srictly classify to 2:
+    query : label
+      저학년이 고학년 벨트 미리 딸 수 있나요 제가 2학년인데요 : 1
+      교수님께서 lms에서 개인별 성적란 누르면 확인된다하셨는데 성적누르면 해당 강의에 대한 성적은 비공개되어 확인할 수 없습니다라고 떠요 어디서 볼수있나요? 메일 드려야하나요? : 1  
+      과목코드는 어디서 봐? : 2 
+      대학생활계획서는 어디서 써? : 2    
+      전진설 4번 하는거 2,3 학년말고 4학년에 하는것도 포함해서 4번하는건가요? 2,3학년에 3번하고 4학년에 1번해도 되는건가요? : 2
+      중도 앞에서 오늘 행사 함? : 1
+      오늘 휴학 가능할까? : 1
+      링크를 요약해줘 : 1
+  Answer in language: {language}
+  Query: {query}
+  Output Format: [
+                class of sentence :
+                Reason: 
+                Solution:
+                 ]

@@ -1,7 +1,7 @@
 from fetch_web_content import WebContentFetcher
 from retrieval import EmbeddingRetriever
-# from llm_answer import GPTAnswer
-from local_llm_answer import GPTAnswer
+from llm_answer import GPTAnswer
+# from local_llm_answer import GPTAnswer
 # from local_llm_answerv1 import GPTAnswer
 from locate_reference import ReferenceLocator
 import time
@@ -9,6 +9,8 @@ import pandas as pd
 import json
 import streamlit as st
 import os 
+from datetime import datetime
+import re
 class LLM:
     def __init__(self):
         df = pd.read_csv('students.csv')
@@ -32,16 +34,16 @@ class LLM:
         profile = "" # User can define the role for LLM
         print("Fetch web content based on the query")
         # Fetch web content based on the query
-        # web_contents_fetcher = WebContentFetcher(query)
-        # web_contents, serper_response = web_contents_fetcher.fetch()
+        web_contents_fetcher = WebContentFetcher("전북대 : " + query + str(datetime.now()))
+        web_contents, serper_response = web_contents_fetcher.fetch()
         # Retrieve relevant documents using embeddings
         print("Retrieve relevant documents using embeddings 1-1")
 
         print("Retrieve relevant documents using embeddings 1-2")
-        relevant_docs_list,links = self.retriever.retrieve_embeddings(query)
+        relevant_docs_list,links = self.retriever.retrieve_embeddings("전북대 : " + query + str(datetime.now()))
         print("Retrieve relevant documents using embeddings 1-3")
         print("Retrieve relevant documents using embeddings 1-4")
-        formatted_relevant_docs = self.content_processor._format_reference(relevant_docs_list, links)
+        formatted_relevant_docs = self.content_processor._format_reference(relevant_docs_list, links, web_contents, serper_response )
         print(formatted_relevant_docs)
         print("Measure the time taken to get an answer from the GPT model")
         # Measure the time taken to get an answer from the GPT model
@@ -60,23 +62,80 @@ class LLM:
             # self.df_keyword.to_csv('keywords.csv')
         ai_message_obj = self.content_processor.get_answer(query, formatted_relevant_docs, "ko-KR", output_format, profile, self.ids)
         answer = ai_message_obj + '\n'
-        st.info(answer)
+        # st.info(answer)
         end = time.time()
         print("\n\nGPT Answer time:", end - start, "s")
+        return answer
+    def checker(self, query):
+        key_word_output_format = ""
+        profile = "" # User can define the role for LLM
+        keyword = self.content_processor.get_search("전북대 : " + query, "ko-KR", key_word_output_format, profile)
+        return keyword
+def print_markdown_from_file(file_path):
+    df = pd.read_csv(file_path)
+    df_sorted = df.sort_values(by='count')
+    markdown_content = df['keyword'].to_markdown(index=False,)
+    st.markdown(markdown_content)    
+def hide_streamlit_header_footer():
+    hide_st_style = """
+            <style>
+            #MainMenu {visibility: hidden;}
+            footer {visibility: hidden;}
+            header {visibility: hidden;}
+            #root > div:nth-child(1) > div > div > div > div > section > div {padding-top: 0rem;}
+            </style>
+            """
+    st.markdown(hide_st_style, unsafe_allow_html=True)
 if __name__ == "__main__":
-    st.set_page_config(page_title="310")
-    st.title('310')
-    llm = LLM()
-    with st.form('my_form'):
-        text = st.text_area('질문')
-        submitted = st.form_submit_button('입력')
-        if submitted:
-            llm.generate_response(text)
+    st.set_page_config(page_title="전북대학교")
+    # st.title("전북대학교")
+    llm  = LLM()
+    # with st.sidebar:
+    #     print_markdown_from_file("keywords.csv")
+    hide_streamlit_header_footer()
+    st.logo("GPT4V2/JBNU_main3.png", icon_image="GPT4V2/JBNU_main2.png")
+    pattern = r'\b\d+\b'
+    # Replicate Credentials
 
-    # Optional Part: display the reference sources of the quoted sentences in LLM's answer
-    # 
-    # print("\n\n", "="*30, "Refernece Cards: ", "="*30, "\n")
-    # locator = ReferenceLocator(answer, serper_response)
-    # reference_cards = locator.locate_source()
-    # json_formatted_cards = json.dumps(reference_cards, indent=4)
-    # print(json_formatted_cards)streamlit run /home/yangcw/video/Llama3/jbchat/gpt.py --server.fileWatcherType none
+    # Store LLM generated responses
+    if "messages" not in st.session_state.keys():
+        st.session_state.messages = [{"role": "assistant", "content": "도움이 필요하신가요?"}]
+
+    # Display or clear chat messages
+    for message in st.session_state.messages:
+        with st.chat_message(message["role"]):
+            st.write(message["content"])
+
+    def clear_chat_history():
+        st.session_state.messages = [{"role": "assistant", "content": "도움이 필요하신가요?"}]
+    st.sidebar.button('전체 지우기', on_click=clear_chat_history)
+    
+    # User-provided prompt
+    if prompt := st.chat_input("메시지를 입력하세요."):
+        st.session_state.messages.append({"role": "user", "content": prompt})
+        with st.chat_message("user"):
+            st.write(prompt)
+
+    # Generate a new response if last message is not from assistant
+    if st.session_state.messages[-1]["role"] != "assistant":
+        with st.chat_message("assistant"):
+            with st.spinner("<생성중...>"):
+                key = llm.checker(prompt)
+                key_int = re.findall(pattern,key)[0]
+                try:
+                    if int(key_int) == 1:
+                        response = llm.generate_response(prompt)
+                    else: 
+                        response = key.split('\n')[2].split(':')[1]
+                except:
+                    response = llm.generate_response(prompt)
+                placeholder = st.empty()
+                full_response = ''
+                for item in response:
+                    full_response += item
+                    placeholder.markdown(full_response)
+                placeholder.markdown(full_response)
+        message = {"role": "assistant", "content": full_response}
+        st.session_state.messages.append(message)
+
+    # streamlit run /home2/bazaarz/desktop/Llama3/jbchat/GPT4V2/main.py --server.fileWatcherType none

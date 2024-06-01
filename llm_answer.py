@@ -3,7 +3,7 @@ import os
 import yaml
 from fetch_web_content import WebContentFetcher
 from retrieval import EmbeddingRetriever
-# from langchain.chat_models import ChatOpenAI
+from langchain.chat_models import ChatOpenAI
 from langchain_google_genai import ChatGoogleGenerativeAI
 from langchain.prompts import PromptTemplate
 from langchain.schema import HumanMessage
@@ -11,7 +11,7 @@ from langchain.callbacks.streaming_stdout import StreamingStdOutCallbackHandler
 from langchain import ConversationChain
 
 class GPTAnswer:
-    TOP_K = 5  # Top K documents to retrieve
+    TOP_K = 3  # Top K documents to retrieve
 
     def __init__(self):
         # Load configuration from a YAML file
@@ -20,20 +20,23 @@ class GPTAnswer:
             self.config = yaml.safe_load(file)
         self.model_name = self.config["model_name"]
         self.api_key = self.config["openai_api_key"]
-        # self.llm = ChatOpenAI(model_name=self.model_name, openai_api_key=self.api_key, temperature=0.0, streaming=True, callbacks=[StreamingStdOutCallbackHandler()])
-        self.llm = ChatGoogleGenerativeAI(model=self.model_name, google_api_key=self.api_key, temperature=0.0, streaming=True, callbacks=[StreamingStdOutCallbackHandler()])
+        self.llm = ChatOpenAI(model_name=self.model_name, openai_api_key=self.api_key, temperature=0.0, streaming=True, callbacks=[StreamingStdOutCallbackHandler()])
+        # self.llm = ChatGoogleGenerativeAI(model=self.model_name, google_api_key=self.api_key, temperature=0.0, streaming=True, callbacks=[StreamingStdOutCallbackHandler()])
         self.talk = ConversationChain(llm=self.llm,verbose=True)
-    def _format_reference(self, relevant_docs_list, link_list):
+    def _format_reference(self, relevant_docs_list, link_list, web_contents, serper_response):
         # Format the references from the retrieved documents for use in the prompt
         reference_url_list = [(relevant_docs_list[i].metadata)['url'] for i in range(self.TOP_K)]
         reference_content_list = [relevant_docs_list[i].page_content for i in range(self.TOP_K)]
         reference_index_list = [link_list.index(link)+1 for link in reference_url_list]
         rearranged_index_list = self._rearrange_index(reference_index_list)
-
         # Create a formatted string of references
         formatted_reference = "\n"
         for i in range(self.TOP_K):
             formatted_reference += ('Webpage[' + str(rearranged_index_list[i]) + '], url: ' + reference_url_list[i] + ':\n' + reference_content_list[i] + '\n\n\n')
+        for i,text in enumerate(serper_response['snippets']):
+            if i+1 == self.TOP_K:
+                break
+            formatted_reference += ('Webpage[' + str(self.TOP_K+i+1) + '], url: ' + serper_response['links'][i] + ':\n' + web_contents[i] + '\n\n\n')
         return formatted_reference
 
     def _rearrange_index(self, original_index_list):
@@ -49,6 +52,17 @@ class GPTAnswer:
         return rearranged_index_list
     def get_keyword(self, query, language, output_format, profile):
         template = self.config["key_word_template"]
+        prompt_template = PromptTemplate(
+            input_variables=["profile", "language", "query", "format"],
+            template=template
+        )
+        profile = "conscientious researcher" if not profile else profile
+        summary_prompt = prompt_template.format(language=language, query=query, format=output_format, profile=profile)
+        gpt_answer = self.llm([HumanMessage(content=summary_prompt)])
+        gpt_answer = gpt_answer.content
+        return gpt_answer
+    def get_search(self, query, language, output_format, profile):
+        template = self.config["search_template"]
         prompt_template = PromptTemplate(
             input_variables=["profile", "language", "query", "format"],
             template=template

@@ -33,7 +33,7 @@ class EmbeddingRetriever:
 
         # Create a Chroma database from the documents using specific embeddings
         print("chroma")
-        db = Chroma(persist_directory="./jbnu_db", 
+        db = Chroma(persist_directory="./jbnu_db_all_text", 
                     embedding_function= SentenceTransformerEmbeddings(model_name="jhgan/ko-sroberta-multitask"
                                                                       ,model_kwargs = {'device': 'cuda'}),)
         print("after chroma")
