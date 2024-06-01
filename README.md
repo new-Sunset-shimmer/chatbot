@@ -9,6 +9,7 @@
     - [ ]  Instruction tuning
     - [ ]  OUTPUT
 - [ ]  [BONUS]
+- [ ]  시현
 
 Disclaimer!!!!!!: all of my code based on https://github.com/Wilson-ZheLin/GPT-4-Web-Browsing
 
@@ -48,41 +49,61 @@ LLM은 대규모 언어 모델이다. Query와 TOP K의 문서들을 기반으�
 
 PROMPT TUNING을 위한 TEMPLATE은 아래와 같은 방식으로 작성했다.
 
-### GEMINI
+### GEMINI, GPT4o
 
 ```yaml
 template: |
-  Web search result:
-  {context_str}
-  Personal Information:
-  {information}
-  
-  Instructions: You are a/an {profile}. Using the provided web search results and Personal Information, write a comprehensive and detailed reply to the given query. 
+  Web search result: {context_str}
+
+  Personal Information: {information}
+
+  Instructions: You are a/an {profile}. Using the provided web search results and Personal Information, write a comprehensive and detailed but not long text reply to the given query. 
   Make sure to cite results using [number] notation after the reference.
   At the end of the answer, list the corresponding references with indexes, each reference contains the urls and quoted sentences from the web search results by the order you marked in the answer above and these sentences should be exactly the same as in the web search results.
   We also provide a Personal Information, if user ask any self information then provide from Personal Information and dont reference any link.
   Here is an example of a reference:
-      [1] URL: https://www.pocketgamer.biz/news/81670/tencent-and-netease-dominated-among-chinas-top-developers-in-q1/
-          Quoted sentence: Tencent accounted for roughly 50% of domestic market revenue for the quarter, compared to 40% in Q1 2022.
+  [1] URL: https://www.pocketgamer.biz/news/81670/tencent-and-netease-dominated-among-chinas-top-developers-in-q1/
   self information example:
-      학번, 이름, 학과, 성적
+          학번, 이름, 학과, 성적
   Answer in language: {language}
   Query: {query}
   Output Format: {format}
   Please organize your output according to the Output Format. If the Output Format is empty, you can ignore it.
 key_word_template: |
-  Instructions: You are a/an {profile}. Make keyword of {query} constucted by under 5 tokens. Key word must contain main context of {query} and must understandable by human 
+  Instructions: You are a/an {profile}. Make keyword of {query} constucted by under 5 tokens. Keyword mustn't be answer of {query}. Keyword must be main context of {query} and must understandable by human.
+  There is no need to add another text with keyword when answering. Answering only keyword. 
   Here is an examples of how to make keyword:
+    Question -> keyword
       [1] 전북대학교 컴퓨터공학부 졸업 조건을 알려줘 -> 컴퓨터공학부 졸업 조건
       [2] 지금 휴학 가능한가요? 일반휴학입니다 -> 휴학 
       [3] 자퇴신청 어제 까진데 또 언제할수있음? -> 자퇴신청 일정
       [4] 전북대학교 영어영문학과 졸업 조건을 알려줘 -> 영어영문학과 졸업 조건
+      [5] 내 학번을 알려줘 -> 학번 질문
   Answer in language: {language}
   Query: {query}
   Output Format: {format}
+search_template: |
+  Instructions: please classify(labeling) {query} by comprehensive enough to answer. 1 is label of comprehensive enough and 2 is NOT comprehensive enough.
+  Here is an examples of sentences labeled for help to classify. but not too srictly classify to 2:
+    query : label
+      저학년이 고학년 벨트 미리 딸 수 있나요 제가 2학년인데요 : 1
+      교수님께서 lms에서 개인별 성적란 누르면 확인된다하셨는데 성적누르면 해당 강의에 대한 성적은 비공개되어 확인할 수 없습니다라고 떠요 어디서 볼수있나요? 메일 드려야하나요? : 1  
+      과목코드는 어디서 봐? : 2 
+      대학생활계획서는 어디서 써? : 2    
+      전진설 4번 하는거 2,3 학년말고 4학년에 하는것도 포함해서 4번하는건가요? 2,3학년에 3번하고 4학년에 1번해도 되는건가요? : 2
+      중도 앞에서 오늘 행사 함? : 1
+      오늘 휴학 가능할까? : 1
+      링크를 요약해줘 : 1
+  Answer in language: {language}
+  Query: {query}
+  Output Format: [
+                class of sentence :
+                Reason: 
+                Solution:
+                 ]
 ```
 
-### Llama3
+### Llama3, other local LLM
 
 ```yaml
 template: |
@@ -145,6 +166,20 @@ key_word_template: |
 ```
 
 ### OUTPUT EXAMPLE
+
+### GPT4o’s EXAMPLE OUTPUT
+
+```jsx
+Q:계절학기 수강신청 완료 확인 지금 안되는 거 맞아?? 취업교과목 하나 신청 했는데 안뜨는 것 같아서
+
+A:{'answer': '계절학기 수강신청 완료 확인이 안 되는 상황에 대해 걱정이 많으시겠네요. 전북대학교의 계절학기 수강신청 관련 정보를 참고하여 답변드리겠습니다.\n\n전북대학교의 계절학기 수강신청은 보통 5월과 11월 초순에 진행됩니다. 수강신청 후 수강료 납부, 폐강과목 공고 및 수강정정 등의 절차가 이어집니다. 수강신청 인원이 30명 이상인 경우에만 강의가 개설되며, 전공과목의 경우 20명 이상으로 변경되었습니다[1][2].\n\n수강신청이 완료되었는지 확인하려면, 전북대학교 오아시스 시스템에 로그인하여 수강신청 내역을 확인해보시기 바랍니다. 만약 수강신청 내역이 보이지 않는다면, 수강신청이 제대로 완료되지 않았을 가능성이 있습니다. 이 경우, 학교의 학사관리팀이나 해당 학부에 문의하여 확인하는 것이 좋습니다.\n\n취업교과목을 신청했는데 수강신청 내역에 나타나지 않는다면, 다음과 같은 절차를 따라 확인해보세요:\n1. 오아시스 시스템에 로그인합니다.\n2. 수강관리 메뉴에서 수강신청 내역을 확인합니다.\n3. 수강신청이 제대로 완료되지 않았다면, 수강신청 기간 내에 다시 시도하거나 학사관리팀에 문의합니다.\n\n추가로, 계절학기 수강신청 관련 공지사항을 확인하여 변경된 사항이나 추가 안내를 참고하시기 바랍니다[3].\n\n참고로, 전북대학교의 계절학기 수강신청 관련 주요 내용은 다음과 같습니다:\n- 수강자격: 본교 및 협력대학 재학생, 본교 휴학생\n- 신청학점: 6학점 이내\n- 개설과목: 교양과목 및 전공과목\n- 설강기준: 수강신청 인원 30명 이상 (전공과목은 20명 이상)\n- 수업시간: 3학점의 일반강의 과목 기준으로 1주당 15시간 (총 3주 45시간)[1][2].\n\n이 정보를 바탕으로 수강신청 내역을 다시 확인해보시고, 문제가 지속될 경우 학교에 문의하시기 바랍니다.\n\n### References\n[1] URL: https://www.jbnu.ac.kr/kor/?menuID=139&category=%EA%B8%B0%ED%83%80&pno=2388\n    Quoted sentence: "수강자격 : 본교 및 협력대학 재학생, 본교 휴학생(단, 휴학생의 경우 당해학기 계절수업을 이수하여 졸업학점을 충족하더라도 졸업은 불가)"\n[2] URL: https://www.jbnu.ac.kr/kor/?menuID=140&category=%EA%B5%90%EC%9B%90%EC%B1%84%EC%9A%A9&pno=204\n    Quoted sentence: "설강기준 : 수강신청 인원 30명 이상인 경우 설강"\n[3] URL: https://top.jbnu.ac.kr/bbs/bie/1180/301133/artclView.do?layout=unknown\n    Quoted sentence: "계절수업 개설 기준 인원이 변경되었으니 확인하시어 신청 시 참고하여 주시면 감사하겠습니다. 전공과목 : 30명 → 20명 교양과목 : 30명 유지"\n', 'keyword': '계절학기 수강신청 확인'}
+```
+
+```jsx
+Q:전북대 홈페이지에 5월 1일에 중간고사 완료라고 뜨는데.. 정확히 며칠부터 중간고사 기간인가요?
+
+A:{'answer': '전북대학교의 학사일정에 따르면, 중간고사 기간은 명확히 명시되어 있지 않습니다. 다만, 중간고사 완료일은 5월 1일로 표시되어 있습니다[5]. 일반적으로 중간고사는 학기 중반에 시행되며, 보통 8주차에 시작됩니다. 따라서, 중간고사 기간은 4월 중순부터 5월 초까지로 예상할 수 있습니다.\n\n### References\n[5] URL: https://likehome.jbnu.ac.kr/home/main/inner.php?sMenu=D5000&mode=view&no=5349\n    Quoted sentence: "전북대학교 학사일정에 시험기간이라는 것은 명시 되어있지 않습니다. 그렇기 때문에 야간출입허용기간은 학사일정에 명시되어있는 중간시험 종료를 기점으로 합니다."\n', 'keyword': '중간고사 기간'}
+```
 
 ### GEMINI’s EXAMPLE OUTPUT
 
@@ -426,3 +461,13 @@ Llama 3B instruct:
 Mistral:
 
 나의 학과를 알려줘 → 학과 (Department)
+
+### [시현]
+
+![2024-06-0202-33-41-ezgif.com-video-to-gif-converter.gif](%E1%84%80%E1%85%AE%E1%84%92%E1%85%A7%E1%86%AB%20%E1%84%89%E1%85%A5%E1%86%AF%E1%84%86%E1%85%A7%E1%86%BC%2018cbfd759a094c27a2ed85c806821a67/2024-06-0202-33-41-ezgif.com-video-to-gif-converter.gif)
+
+![2024-06-0202-26-29-ezgif.com-video-to-gif-converter.gif](%E1%84%80%E1%85%AE%E1%84%92%E1%85%A7%E1%86%AB%20%E1%84%89%E1%85%A5%E1%86%AF%E1%84%86%E1%85%A7%E1%86%BC%2018cbfd759a094c27a2ed85c806821a67/2024-06-0202-26-29-ezgif.com-video-to-gif-converter.gif)
+
+![Screenshot 2024-06-02 at 02.35.18.png](%E1%84%80%E1%85%AE%E1%84%92%E1%85%A7%E1%86%AB%20%E1%84%89%E1%85%A5%E1%86%AF%E1%84%86%E1%85%A7%E1%86%BC%2018cbfd759a094c27a2ed85c806821a67/Screenshot_2024-06-02_at_02.35.18.png)
+
+![Screenshot 2024-06-02 at 02.35.26.png](%E1%84%80%E1%85%AE%E1%84%92%E1%85%A7%E1%86%AB%20%E1%84%89%E1%85%A5%E1%86%AF%E1%84%86%E1%85%A7%E1%86%BC%2018cbfd759a094c27a2ed85c806821a67/Screenshot_2024-06-02_at_02.35.26.png)
